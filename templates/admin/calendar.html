@@ -1,0 +1,540 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Календарь сотрудника {{ employee.last_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Специфические стили для календаря */
+    .navigation {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 20px 0;
+    }
+
+    .nav-button {
+        background: var(--bg-container);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        padding: 8px 16px;
+        text-decoration: none;
+        color: var(--primary-color);
+        font-weight: 500;
+        transition: background 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .nav-button:hover {
+        background: var(--border-color);
+    }
+
+    .current-month {
+        font-size: 1.5em;
+        font-weight: 500;
+        color: var(--primary-color);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    th {
+        background-color: var(--primary-color);
+        color: white;
+        font-weight: 500;
+        padding: 12px 4px;
+        font-size: 0.9em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    td {
+        border: 1px solid var(--border-color);
+        height: 80px;
+        position: relative;
+        background-color: var(--bg-container);
+        transition: background-color 0.2s;
+    }
+
+    td:hover {
+        background-color: var(--border-color);
+    }
+
+    .weekend {
+        background-color: var(--weekend-bg);
+    }
+
+    .holiday {
+        border: 2px solid #dc3545; /* или использовать переменную */
+    }
+
+    .patrick {
+        border: 2px solid #28a745;
+    }
+
+    .day-number {
+        position: absolute;
+        top: 6px;
+        left: 8px;
+        font-size: 1.3em;
+        font-weight: 600;
+        color: var(--text-color);
+    }
+
+    .time-row {
+        position: absolute;
+        bottom: 8px;
+        left: 0;
+        right: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    .time-display {
+        font-size: 0.9em;
+        font-weight: 600;
+        color: var(--text-color);
+        background: var(--bg-container);
+        padding: 2px 6px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: outline 0.2s;
+        position: relative;
+        border: 1px solid var(--border-color);
+    }
+
+    .time-display.positive-delta {
+        outline: 2px solid #28a745;
+        outline-offset: 1px;
+    }
+
+    .time-display.negative-delta {
+        outline: 2px solid #dc3545;
+        outline-offset: 1px;
+    }
+
+    /* Тултип */
+    .tooltip {
+        position: relative;
+        display: inline-block;
+    }
+
+    .tooltip .tooltiptext {
+        visibility: hidden;
+        width: 200px;
+        background-color: var(--bg-container);
+        color: var(--text-color);
+        text-align: left;
+        border-radius: 6px;
+        padding: 8px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        position: absolute;
+        z-index: 1000;
+        bottom: 150%;
+        left: 50%;
+        margin-left: -100px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 0.85em;
+        pointer-events: none;
+        white-space: normal;
+        word-wrap: break-word;
+    }
+
+    .tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    .hour-btn {
+        cursor: pointer;
+        font-size: 0.8em;
+        font-weight: bold;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        border: none;
+        transition: transform 0.1s, background 0.2s;
+        color: #495057;
+    }
+
+    .plus-btn {
+        background-color: #d4edda;
+    }
+
+    .minus-btn {
+        background-color: #f8d7da;
+    }
+
+    .plus-btn:hover {
+        background-color: #c3e6cb;
+        transform: scale(1.05);
+    }
+
+    .minus-btn:hover {
+        background-color: #f5c6cb;
+        transform: scale(1.05);
+    }
+
+    .back-link {
+        display: inline-block;
+        margin-top: 20px;
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .back-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Модальное окно */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.4);
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+        background-color: var(--bg-container);
+        color: var(--text-color);
+        margin: 10% auto;
+        padding: 24px;
+        border: 1px solid var(--border-color);
+        width: 90%;
+        max-width: 400px;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .close:hover {
+        color: var(--text-color);
+    }
+
+    .modal h3 {
+        margin-top: 0;
+        color: var(--primary-color);
+    }
+
+    .modal .edit-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 16px 0;
+    }
+
+    .modal .edit-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: none;
+        font-size: 1.5em;
+        font-weight: bold;
+        cursor: pointer;
+        color: white;
+        transition: transform 0.1s, opacity 0.2s;
+    }
+
+    .modal .edit-btn.minus {
+        background-color: #dc3545;
+    }
+
+    .modal .edit-btn.plus {
+        background-color: #28a745;
+    }
+
+    .modal .edit-btn:hover {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+
+    .modal .time-input {
+        flex: 1;
+        padding: 10px;
+        font-size: 1.2em;
+        text-align: center;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background-color: var(--bg-container);
+        color: var(--text-color);
+    }
+
+    .modal .comment-input {
+        width: 100%;
+        padding: 10px;
+        margin: 8px 0;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background-color: var(--bg-container);
+        color: var(--text-color);
+        box-sizing: border-box;
+        resize: vertical;
+    }
+
+    .modal .save-btn {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        width: 100%;
+    }
+
+    .modal .save-btn:hover {
+        background: #3a5a80;
+    }
+
+    #history-list {
+        list-style: none;
+        padding: 0;
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 8px;
+        background-color: var(--bg-container);
+    }
+
+    #history-list li {
+        padding: 6px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    #history-list li:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <h2>Календарь сотрудника: {{ employee.last_name }} {{ employee.first_name }}</h2>
+    
+    <div class="navigation">
+        <a class="nav-button" href="{{ url_for('employee_calendar', employee_id=employee.id, year=prev_year, month=prev_month) }}">
+            ← Предыдущий
+        </a>
+        <span class="current-month">
+            {% set month_names = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'] %}
+            {{ month_names[month_data.month - 1] }} {{ month_data.year }}
+        </span>
+        <a class="nav-button" href="{{ url_for('employee_calendar', employee_id=employee.id, year=next_year, month=next_month) }}">
+            Следующий →
+        </a>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Пн</th><th>Вт</th><th>Ср</th><th>Чт</th><th>Пт</th><th>Сб</th><th>Вс</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for week in month_data.cal %}
+            <tr>
+                {% for day in week %}
+                    {% if day != 0 %}
+                        {% set date_obj = date(month_data.year, month_data.month, day) %}
+                        {% set total_minutes = month_data.daily_minutes.get(date_obj, 0) %}
+                        {% set hours = total_minutes // 60 %}
+                        {% set minutes = total_minutes % 60 %}
+                        {% set delta = month_data.daily_delta.get(date_obj, 0) %}
+                        {% set comments = month_data.daily_comments.get(date_obj, []) %}
+                        <td class="
+                            {% if date_obj.weekday() >= 5 %}weekend{% endif %}
+                            {% if (month_data.month, day) in holidays %}holiday{% endif %}
+                            {% if month_data.month == 3 and day == 17 %}patrick{% endif %}
+                        ">
+                            <div class="day-number">{{ day }}</div>
+                            <div class="time-row">
+                                <button class="hour-btn minus-btn" onclick="openEditModal('{{ date_obj }}', {{ hours }}, {{ minutes }})" title="Убавить час">−</button>
+                                <span class="time-display {% if delta > 0 %}positive-delta{% elif delta < 0 %}negative-delta{% endif %} tooltip" 
+                                      onclick="openEditModal('{{ date_obj }}', {{ hours }}, {{ minutes }})"
+                                      id="time-{{ date_obj }}">
+                                    {{ hours }}:{{ '%02d' % minutes }}
+                                    {% if comments %}
+                                    <span class="tooltiptext">
+                                        {% for comment in comments %}
+                                            • {{ comment }}<br>
+                                        {% endfor %}
+                                    </span>
+                                    {% endif %}
+                                </span>
+                                <button class="hour-btn plus-btn" onclick="openEditModal('{{ date_obj }}', {{ hours }}, {{ minutes }})" title="Прибавить час">+</button>
+                            </div>
+                        </td>
+                    {% else %}
+                        <td></td>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <a class="back-link" href="{{ url_for('admin_dashboard') }}">← Назад к списку сотрудников</a>
+
+    <!-- Модальное окно редактирования -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>Редактирование дня <span id="modal-date"></span></h3>
+            
+            <div class="edit-row">
+                <button class="edit-btn minus" id="modal-minus" title="Убавить час">−</button>
+                <input type="text" id="modal-time" class="time-input" value="00:00" placeholder="ЧЧ:ММ">
+                <button class="edit-btn plus" id="modal-plus" title="Прибавить час">+</button>
+            </div>
+
+            <textarea id="modal-comment" class="comment-input" rows="2" placeholder="Причина изменения (необязательно)"></textarea>
+
+            <button class="save-btn" id="modal-save">Сохранить</button>
+
+            <h4>История комментариев</h4>
+            <ul id="history-list"></ul>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Модальное окно и связанные функции
+    const modal = document.getElementById('editModal');
+    const span = document.getElementsByClassName('close')[0];
+    const modalDateSpan = document.getElementById('modal-date');
+    const modalTimeInput = document.getElementById('modal-time');
+    const modalComment = document.getElementById('modal-comment');
+    const modalMinus = document.getElementById('modal-minus');
+    const modalPlus = document.getElementById('modal-plus');
+    const modalSave = document.getElementById('modal-save');
+    const historyList = document.getElementById('history-list');
+
+    let currentDate = '';
+    let currentHours = 0;
+    let currentMinutes = 0;
+
+    span.onclick = function() {
+        modal.style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    window.openEditModal = function(dateStr, hours, minutes) {
+        currentDate = dateStr;
+        currentHours = hours;
+        currentMinutes = minutes;
+        modalDateSpan.innerText = dateStr;
+        modalTimeInput.value = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        modalComment.value = '';
+
+        fetch(`/admin/employee/{{ employee.id }}/adjustments?date=${dateStr}`)
+            .then(response => response.json())
+            .then(data => {
+                historyList.innerHTML = '';
+                data.forEach(item => {
+                    let sign = item.delta_minutes >= 0 ? '+' : '';
+                    let hours = Math.floor(Math.abs(item.delta_minutes) / 60);
+                    let mins = Math.abs(item.delta_minutes) % 60;
+                    let deltaStr = `${sign}${hours}:${mins < 10 ? '0' + mins : mins}`;
+                    let li = document.createElement('li');
+                    li.innerHTML = `<strong>${deltaStr}</strong> - ${item.comment || 'без комментария'} <em>(${item.created_at})</em>`;
+                    historyList.appendChild(li);
+                });
+            });
+
+        modal.style.display = 'block';
+    }
+
+    modalMinus.addEventListener('click', function() {
+        let [h, m] = modalTimeInput.value.split(':').map(Number);
+        if (isNaN(h) || isNaN(m)) {
+            h = 0; m = 0;
+        }
+        h = Math.max(h - 1, 0);
+        modalTimeInput.value = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    });
+
+    modalPlus.addEventListener('click', function() {
+        let [h, m] = modalTimeInput.value.split(':').map(Number);
+        if (isNaN(h) || isNaN(m)) {
+            h = 0; m = 0;
+        }
+        h += 1;
+        modalTimeInput.value = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    });
+
+    modalSave.addEventListener('click', function() {
+        const timeStr = modalTimeInput.value;
+        const comment = modalComment.value;
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        if (isNaN(hours) || isNaN(minutes) || hours < 0 || minutes < 0 || minutes > 59) {
+            alert('Пожалуйста, введите корректное время в формате ЧЧ:ММ');
+            return;
+        }
+
+        const newTotal = hours * 60 + minutes;
+        const oldTotal = currentHours * 60 + currentMinutes;
+        const deltaMinutes = newTotal - oldTotal;
+
+        if (deltaMinutes === 0 && !comment.trim()) {
+            alert('Нет изменений');
+            return;
+        }
+
+        fetch(`/admin/employee/{{ employee.id }}/adjust`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                date: currentDate,
+                hours: 0,
+                minutes: deltaMinutes,
+                comment: comment
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('time-' + currentDate).innerText = data.total;
+                location.reload(); // для обновления классов и тултипов
+            } else {
+                alert('Ошибка: ' + data.error);
+            }
+        });
+    });
+</script>
+{% endblock %}

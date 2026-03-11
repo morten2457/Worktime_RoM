@@ -1,0 +1,349 @@
+{% extends "admin/base.html" %}
+{% block page_title %}Управление сотрудниками{% endblock %}
+{% block extra_css %}
+<style>
+    .add-form {
+        background: var(--bg-container);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 30px;
+        max-width: 500px;
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-group input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background-color: var(--input-bg);
+        color: var(--text-color);
+        font-size: 1em;
+        box-sizing: border-box;
+    }
+    .form-group input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+    }
+    .submit-btn {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 24px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .submit-btn:hover {
+        background-color: var(--primary-hover);
+    }
+    .employee-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .employee-table th {
+        background-color: var(--primary-color);
+        color: white;
+        font-weight: 500;
+        padding: 12px 8px;
+        text-align: left;
+        font-size: 0.9em;
+    }
+    .employee-table td {
+        padding: 10px 8px;
+        border-bottom: 1px solid var(--border-color);
+        background-color: var(--bg-container);
+    }
+    .employee-table tr:hover td {
+        background-color: var(--border-color);
+    }
+    .action-link {
+        color: var(--primary-color);
+        text-decoration: none;
+        margin-right: 10px;
+        cursor: pointer;
+        font-size: 1.2em;
+    }
+    .action-link:hover {
+        color: var(--primary-hover);
+    }
+    .employee-link {
+        font-size: 0.85em;
+        color: var(--link-color);
+        word-break: break-all;
+    }
+    .flashes {
+        list-style: none;
+        padding: 0;
+        margin-bottom: 20px;
+        color: #155724;
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 12px;
+        padding: 12px;
+    }
+    /* Модальное окно для редактирования */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.4);
+        backdrop-filter: blur(4px);
+    }
+    .modal-content {
+        background-color: var(--bg-container);
+        color: var(--text-color);
+        margin: 10% auto;
+        padding: 24px;
+        border: 1px solid var(--border-color);
+        width: 90%;
+        max-width: 500px;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    .close:hover {
+        color: var(--text-color);
+    }
+    .modal h3 {
+        margin-top: 0;
+        color: var(--primary-color);
+    }
+    .modal .form-group {
+        margin-bottom: 15px;
+    }
+    .modal label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+    }
+    .modal input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background-color: var(--input-bg);
+        color: var(--text-color);
+        box-sizing: border-box;
+    }
+    .modal .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 15px 0;
+    }
+    .modal .checkbox-group input {
+        width: auto;
+    }
+    .modal .save-btn {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 24px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        width: 100%;
+        margin-top: 10px;
+    }
+    .modal .save-btn:hover {
+        background: var(--primary-hover);
+    }
+</style>
+{% endblock %}
+{% block content %}
+<h3>Добавить сотрудника</h3>
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <ul class="flashes">
+        {% for message in messages %}
+            <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+{% endwith %}
+<form method="post" action="{{ url_for('add_employee') }}" class="add-form">
+    <div class="form-group">
+        <input type="text" name="last_name" placeholder="Фамилия" required>
+    </div>
+    <div class="form-group">
+        <input type="text" name="first_name" placeholder="Имя" required>
+    </div>
+    <div class="form-group">
+        <input type="text" name="middle_name" placeholder="Отчество">
+    </div>
+    <div class="form-group">
+        <input type="text" name="phone" placeholder="Телефон" required>
+    </div>
+    <button type="submit" class="submit-btn">Добавить</button>
+</form>
+
+<h3>Существующие сотрудники</h3>
+{% if employees %}
+<table class="employee-table">
+    <thead>
+        <tr>
+            <th>ФИО</th>
+            <th>Телефон</th>
+            <th>Ссылка для сотрудника</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for emp in employees %}
+        <tr>
+            <td>{{ emp.last_name }} {{ emp.first_name }} {{ emp.middle_name or '' }}</td>
+            <td>{{ emp.phone }}</td>
+            <td class="employee-link"><a href="{{ url_for('employee_panel', token=emp.token, _external=True) }}" target="_blank">{{ url_for('employee_panel', token=emp.token, _external=True) }}</a></td>
+            <td>
+                <span class="action-link" onclick="openEditModal({{ emp.id }})" title="Редактировать">✏️</span>
+                <span class="action-link" onclick="confirmDelete({{ emp.id }})" title="Удалить">🗑️</span>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Нет сотрудников</p>
+{% endif %}
+
+<!-- Модальное окно редактирования сотрудника -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h3>Редактирование сотрудника</h3>
+        <form id="editForm">
+            <input type="hidden" id="edit-id" name="id">
+            <div class="form-group">
+                <label>Фамилия</label>
+                <input type="text" id="edit-last-name" name="last_name" required>
+            </div>
+            <div class="form-group">
+                <label>Имя</label>
+                <input type="text" id="edit-first-name" name="first_name" required>
+            </div>
+            <div class="form-group">
+                <label>Отчество</label>
+                <input type="text" id="edit-middle-name" name="middle_name">
+            </div>
+            <div class="form-group">
+                <label>Телефон</label>
+                <input type="text" id="edit-phone" name="phone" required>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="generate-new-token" name="generate_new_token">
+                <label for="generate-new-token">Сгенерировать новую ссылку для входа (старая станет недействительной)</label>
+            </div>
+            <button type="button" class="save-btn" onclick="saveEmployee()">Сохранить изменения</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const modal = document.getElementById('editModal');
+    const editId = document.getElementById('edit-id');
+    const editLastName = document.getElementById('edit-last-name');
+    const editFirstName = document.getElementById('edit-first-name');
+    const editMiddleName = document.getElementById('edit-middle-name');
+    const editPhone = document.getElementById('edit-phone');
+    const generateTokenCheck = document.getElementById('generate-new-token');
+
+    function openEditModal(employeeId) {
+        // Загружаем данные сотрудника через fetch
+        fetch(`/admin/employee/${employeeId}/data`)
+            .then(response => response.json())
+            .then(data => {
+                editId.value = data.id;
+                editLastName.value = data.last_name;
+                editFirstName.value = data.first_name;
+                editMiddleName.value = data.middle_name || '';
+                editPhone.value = data.phone;
+                generateTokenCheck.checked = false;
+                modal.style.display = 'block';
+            });
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+    }
+
+    function saveEmployee() {
+        const employeeId = editId.value;
+        const data = {
+            last_name: editLastName.value,
+            first_name: editFirstName.value,
+            middle_name: editMiddleName.value,
+            phone: editPhone.value,
+            generate_new_token: generateTokenCheck.checked
+        };
+
+        fetch(`/admin/employee/${employeeId}/edit`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                closeModal();
+                location.reload(); // перезагружаем страницу для обновления таблицы
+            } else {
+                alert('Ошибка: ' + result.error);
+            }
+        });
+    }
+
+	function confirmDelete(employeeId) {
+		if (confirm('Вы уверены, что хотите удалить этого сотрудника? Это действие необратимо.')) {
+			fetch(`/admin/employee/${employeeId}/delete`, {
+				method: 'POST',
+				headers: {'Content-Type': 'application/json'}
+			})
+			.then(async response => {
+				const data = await response.json();
+				if (!response.ok) {
+					throw new Error(data.error || 'Ошибка сервера');
+				}
+				return data;
+			})
+			.then(result => {
+				if (result.success) {
+					location.reload();
+				} else {
+					alert('Ошибка: ' + result.error);
+				}
+			})
+			.catch(error => {
+				alert('Ошибка при удалении: ' + error.message);
+			});
+		}
+	}
+
+    // Закрытие модального окна при клике вне его
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+</script>
+{% endblock %}

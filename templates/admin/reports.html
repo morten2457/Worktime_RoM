@@ -1,0 +1,141 @@
+{% extends "admin/base.html" %}
+{% block page_title %}Отчёты{% endblock %}
+{% block extra_css %}
+<style>
+    .report-form {
+        background: var(--bg-container);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 30px;
+        max-width: 400px;
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+    }
+    .form-group input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background-color: var(--input-bg);
+        color: var(--text-color);
+        font-size: 1em;
+        box-sizing: border-box;
+    }
+    .form-group input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+    }
+    .submit-btn {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 24px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    .submit-btn:hover {
+        background-color: var(--primary-hover);
+    }
+    .export-btn {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 24px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        width: 100%;
+    }
+    .export-btn:hover {
+        background-color: #218838;
+    }
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .report-table th {
+        background-color: var(--primary-color);
+        color: white;
+        font-weight: 500;
+        padding: 12px 8px;
+        text-align: left;
+        font-size: 0.9em;
+    }
+    .report-table td {
+        padding: 10px 8px;
+        border-bottom: 1px solid var(--border-color);
+        background-color: var(--bg-container);
+    }
+    .report-table tr:hover td {
+        background-color: var(--border-color);
+    }
+    .empty-message {
+        text-align: center;
+        padding: 30px;
+        color: var(--text-color);
+        font-style: italic;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<h3>Сформировать отчёт</h3>
+<form method="post" action="{{ url_for('admin_reports') }}" class="report-form">
+    <div class="form-group">
+        <label>Начало периода</label>
+        <input type="date" name="start_date" required>
+    </div>
+    <div class="form-group">
+        <label>Конец периода</label>
+        <input type="date" name="end_date" required>
+    </div>
+    <button type="submit" class="submit-btn">Сформировать</button>
+</form>
+
+<form method="post" action="{{ url_for('export_reports_excel') }}" class="report-form">
+    <div class="form-group">
+        <label>Начало периода</label>
+        <input type="date" name="start_date" required>
+    </div>
+    <div class="form-group">
+        <label>Конец периода</label>
+        <input type="date" name="end_date" required>
+    </div>
+    <button type="submit" class="export-btn">Экспорт в Excel</button>
+</form>
+
+{% if report_data %}
+<h3>Результат</h3>
+<table class="report-table">
+    <thead>
+        <tr>
+            <th>Сотрудник</th>
+            <th>Отработано часов</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in report_data %}
+        <tr>
+            <td>{{ item.employee }}</td>
+            <td>{{ item.total_str }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}

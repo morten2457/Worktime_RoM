@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Администрирование{% endblock %}</title>
+    <style>
+        /* Переменные для светлой темы */
+        :root {
+            --bg-page: #f1f3f5;
+            --bg-container: #ffffff;
+            --text-color: #212529;
+            --primary-color: #4a6fa5;
+            --primary-hover: #3a5a80;
+            --border-color: #dee2e6;
+            --weekend-bg: #fff5f5;
+            --link-color: #4a6fa5;
+            --input-bg: #ffffff;
+            --input-border: #ced4da;
+            --button-text: #ffffff;
+        }
+
+        /* Тёмная тема */
+        body.dark-mode {
+            --bg-page: #1a1e24;
+            --bg-container: #2c2f36;
+            --text-color: #e9ecef;
+            --primary-color: #6c8eb0;
+            --primary-hover: #8aafe0;
+            --border-color: #495057;
+            --weekend-bg: #3c2a2a;
+            --link-color: #8aafe0;
+            --input-bg: #3a3f4a;
+            --input-border: #5a5f6a;
+            --button-text: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-page);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--bg-container);
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 24px;
+        }
+
+        /* Навигационная панель */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .navbar-left h2 {
+            margin: 0;
+            color: var(--primary-color);
+            font-size: 1.5em;
+        }
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .nav-link {
+            background: var(--bg-container);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 8px 16px;
+            text-decoration: none;
+            color: var(--primary-color);
+            font-weight: 500;
+            transition: background 0.2s, color 0.2s;
+            white-space: nowrap;
+        }
+        .nav-link:hover {
+            background: var(--border-color);
+            color: var(--text-color);
+        }
+        .theme-switch-inline {
+            background: var(--bg-container);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 8px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-color);
+            user-select: none;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+        .theme-switch-inline:hover {
+            background: var(--border-color);
+        }
+
+        a { color: var(--link-color); }
+
+        /* Стили для страницы входа (оставлены для совместимости) */
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            text-align: center;
+        }
+        .login-container h2 {
+            margin-bottom: 30px;
+            color: var(--primary-color);
+            font-size: 2.2em;
+            font-weight: 400;
+        }
+        .login-form {
+            width: 100%;
+            max-width: 400px;
+            background: var(--bg-container);
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 16px;
+            border: 1px solid var(--input-border);
+            border-radius: 20px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 1.1em;
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.2);
+        }
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            background-color: var(--primary-color);
+            color: var(--button-text);
+            border: none;
+            border-radius: 20px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .login-btn:hover {
+            background-color: var(--primary-hover);
+            transform: scale(1.02);
+        }
+        .flashes {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 20px;
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 12px;
+            padding: 12px;
+            text-align: left;
+        }
+
+        /* Стили для подписи внизу */
+        .footer {
+            margin-top: 30px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 15px;
+            text-align: center;
+            color: var(--text-color);
+            opacity: 0.7;
+            font-size: 0.8em;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="container">
+        <!-- Навигационная панель -->
+        <div class="navbar">
+            <div class="navbar-left">
+                <h2>{% block page_title %}Администрирование{% endblock %}</h2>
+            </div>
+            <div class="navbar-right">
+                {% if current_user.is_authenticated %}
+                    <a class="nav-link" href="{{ url_for('admin_dashboard') }}">🏠 Главная</a>
+                    <a class="nav-link" href="{{ url_for('admin_employees') }}">Управление сотрудниками</a>
+                    <a class="nav-link" href="{{ url_for('admin_reports') }}">Отчёты</a>
+                    <div class="theme-switch-inline" id="theme-toggle-inline">
+                        <span>🌙</span> Тёмная тема
+                    </div>
+                    <a class="nav-link" href="{{ url_for('admin_logout') }}">Выйти</a>
+                {% else %}
+                    <div class="theme-switch-inline" id="theme-toggle-inline">
+                        <span>🌙</span> Тёмная тема
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% block content %}{% endblock %}
+
+        <!-- Подпись -->
+        <div class="footer">
+            Разработано _M0rtEN_ с использованием орочьих технологий
+        </div>
+    </div>
+
+    <script>
+        const themeToggle = document.getElementById('theme-toggle-inline');
+        const body = document.body;
+
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                body.classList.add('dark-mode');
+                themeToggle.innerHTML = '<span>☀️</span> Светлая тема';
+            } else {
+                body.classList.remove('dark-mode');
+                themeToggle.innerHTML = '<span>🌙</span> Тёмная тема';
+            }
+            localStorage.setItem('theme', theme);
+        }
+
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        setTheme(savedTheme);
+
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                const newTheme = body.classList.contains('dark-mode') ? 'light' : 'dark';
+                setTheme(newTheme);
+            });
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
