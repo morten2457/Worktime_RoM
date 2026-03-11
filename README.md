@@ -173,4 +173,4 @@ GitHub: [@morten2457](https://github.com/morten2457)
 <p align="center">
   ⭐ Если проект оказался полезным, поставьте звёздочку на GitHub!
 </p>
-```
+
