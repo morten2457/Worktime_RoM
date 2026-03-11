@@ -1,0 +1,13 @@
+worktime/
+├── app.py                 # основной файл приложения
+├── models.py              # модели базы данных
+├── requirements.txt       # зависимости
+├── templates/             # HTML шаблоны
+│   ├── admin/
+│   │   ├── login.html
+│   │   ├── dashboard.html
+│   │   ├── employees.html
+│   │   └── reports.html
+│   └── employee/
+│       └── panel.html     # интерфейс сотрудника
+└── static/                # CSS, JS, изображения
